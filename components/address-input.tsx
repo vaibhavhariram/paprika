@@ -4,27 +4,44 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { geocode, type GeocodeResult } from "@/lib/geocode";
+import type { LookupResult } from "@/lib/datasf";
 
 export function AddressInput() {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeocodeResult | null>(null);
+  const [lookup, setLookup] = useState<LookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleAnalyze() {
     setError(null);
     setResult(null);
+    setLookup(null);
     if (!address.trim()) return;
 
     setLoading(true);
     try {
       const geocoded = await geocode(address);
-      if (geocoded) {
-        setResult(geocoded);
-        console.log("Geocode result:", { lat: geocoded.lat, lng: geocoded.lng });
-      } else {
+      if (!geocoded) {
         setError("Address not found. Try a different search.");
+        return;
       }
+      setResult(geocoded);
+      console.log("Geocode result:", { lat: geocoded.lat, lng: geocoded.lng });
+
+      const lookupRes = await fetch("/api/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: geocoded.lat, lng: geocoded.lng }),
+      });
+      if (!lookupRes.ok) {
+        setError("Could not load parcel and zoning data.");
+        return;
+      }
+      const lookupData: LookupResult = await lookupRes.json();
+      setLookup(lookupData);
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -52,13 +69,48 @@ export function AddressInput() {
         </p>
       )}
       {result && (
-        <div className="rounded-md border bg-muted/50 p-3 text-sm">
-          <p className="font-medium text-muted-foreground">Coordinates</p>
-          <p className="mt-1">
-            <strong>Lat:</strong> {result.lat.toFixed(6)}{" "}
-            <strong>Lng:</strong> {result.lng.toFixed(6)}
-          </p>
-          <p className="mt-1 text-muted-foreground">{result.display_name}</p>
+        <div className="space-y-3">
+          <div className="rounded-md border bg-muted/50 p-3 text-sm">
+            <p className="font-medium text-muted-foreground">Coordinates</p>
+            <p className="mt-1">
+              <strong>Lat:</strong> {result.lat.toFixed(6)}{" "}
+              <strong>Lng:</strong> {result.lng.toFixed(6)}
+            </p>
+            <p className="mt-1 text-muted-foreground">{result.display_name}</p>
+          </div>
+          {lookup && (
+            <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-2">
+              <p className="font-medium text-muted-foreground">Parcel & Zoning (DataSF)</p>
+              {lookup.parcel ? (
+                <p>
+                  <strong>Parcel (blklot):</strong> {lookup.parcel.blklot}
+                  {lookup.parcel.block_num || lookup.parcel.lot_num
+                    ? ` — Block ${lookup.parcel.block_num}, Lot ${lookup.parcel.lot_num}`
+                    : ""}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">No parcel found (e.g. outside SF)</p>
+              )}
+              {lookup.zoning ? (
+                <p>
+                  <strong>Zoning:</strong> {lookup.zoning.zoning_code}
+                  {lookup.zoning.zoning_name ? ` — ${lookup.zoning.zoning_name}` : ""}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">No zoning district found</p>
+              )}
+              {lookup.height_bulk ? (
+                <p>
+                  <strong>Height / bulk:</strong>{" "}
+                  {[lookup.height_bulk.height_limit, lookup.height_bulk.bulk_district]
+                    .filter(Boolean)
+                    .join(" — ") || "—"}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">No height/bulk district found</p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
