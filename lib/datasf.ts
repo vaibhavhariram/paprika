@@ -161,7 +161,7 @@ export async function getHeightBulk(lat: number, lng: number): Promise<HeightBul
   }
 }
 
-export async function getParcelZoning(lat: number, lng: number): Promise<LookupResult> {
+export async function getParcelZoning(lat: number, lng: number): Promise<ParcelZoningResult> {
   const [parcel, zoning, height_bulk] = await Promise.all([
     getParcel(lat, lng),
     getZoning(lat, lng),

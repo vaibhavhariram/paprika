@@ -109,6 +109,41 @@ export function AddressInput() {
               ) : (
                 <p className="text-muted-foreground">No height/bulk district found</p>
               )}
+              <div className="border-t pt-2 mt-2">
+                <p className="font-medium text-muted-foreground">Zoning rules</p>
+                {lookup.zoning_rules ? (
+                  <div className="mt-1 space-y-1 text-sm">
+                    <p>
+                      <strong>{lookup.zoning_rules.zone_code}</strong> — {lookup.zoning_rules.name}
+                    </p>
+                    {lookup.zoning_rules.description && (
+                      <p className="text-muted-foreground">{lookup.zoning_rules.description}</p>
+                    )}
+                    {lookup.zoning_rules.permitted_uses && lookup.zoning_rules.permitted_uses.length > 0 && (
+                      <p>
+                        <strong>Permitted uses:</strong>{" "}
+                        {lookup.zoning_rules.permitted_uses.join(", ")}
+                      </p>
+                    )}
+                    {lookup.zoning_rules.conditional_uses && lookup.zoning_rules.conditional_uses.length > 0 && (
+                      <p>
+                        <strong>Conditional uses:</strong>{" "}
+                        {lookup.zoning_rules.conditional_uses.join(", ")}
+                      </p>
+                    )}
+                    {lookup.zoning_rules.max_height_note && (
+                      <p className="text-muted-foreground">{lookup.zoning_rules.max_height_note}</p>
+                    )}
+                    {lookup.zoning_rules.bulk_note && (
+                      <p className="text-muted-foreground">{lookup.zoning_rules.bulk_note}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-muted-foreground">
+                    {lookup.zoning_rules_message ?? "No zoning rules available."}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
