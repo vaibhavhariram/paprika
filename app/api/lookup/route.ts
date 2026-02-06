@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getParcelZoning } from "@/lib/datasf";
+import { getZoningRulesForCode } from "@/lib/zoning-rules";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,17 @@ export async function POST(request: Request) {
     }
 
     const result = await getParcelZoning(lat, lng);
-    return NextResponse.json(result);
+    const zoneCode = result.zoning?.zoning_code ?? result.parcel?.zoning_code;
+    const { rules: zoning_rules, message: zoning_rules_message } =
+      getZoningRulesForCode(zoneCode);
+
+    return NextResponse.json({
+      ...result,
+      zoning_rules: zoning_rules ?? null,
+      ...(zoning_rules_message != null && zoning_rules_message !== ""
+        ? { zoning_rules_message }
+        : {}),
+    });
   } catch {
     return NextResponse.json(
       { error: "Lookup failed" },

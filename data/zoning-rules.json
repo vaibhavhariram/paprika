@@ -1,0 +1,63 @@
+{
+  "_source_note": "Phase 3 static data. Sourced from San Francisco Planning Code (sfplanning.org / codelibrary.amlegal.com). Verify against current Planning Code before production use.",
+  "rules": [
+    {
+      "zone_code": "C-3-O",
+      "name": "Downtown Office District",
+      "description": "C-3-O is a downtown commercial district permitting office, retail, and mixed uses with specific height and bulk controls.",
+      "permitted_uses": [
+        "Office",
+        "Retail",
+        "Restaurant",
+        "Hotel",
+        "Financial services",
+        "Theater and entertainment",
+        "Mixed use (residential above commercial)"
+      ],
+      "conditional_uses": [
+        "Residential (subject to conditions)",
+        "Institutional uses"
+      ],
+      "max_height_note": "Subject to height district; base streetwall and tower controls apply.",
+      "bulk_note": "Bulk measured per 132.1; base and lower tower dimensions apply in C-3-O(SD)."
+    },
+    {
+      "zone_code": "NC-2",
+      "name": "Neighborhood Commercial (Small Scale)",
+      "description": "NC-2 districts allow small-scale neighborhood-serving retail and services with limited size and intensity.",
+      "permitted_uses": [
+        "Neighborhood retail",
+        "Restaurant (limited size)",
+        "Personal services",
+        "Professional office (limited)",
+        "Residential above ground floor"
+      ],
+      "conditional_uses": [
+        "Liquor store",
+        "Full-service restaurant",
+        "Lodging (small)"
+      ],
+      "max_height_note": "Typically 40–65 ft depending on height district.",
+      "bulk_note": "Neighborhood commercial bulk limits; check height and bulk map."
+    },
+    {
+      "zone_code": "C-2",
+      "name": "Community Commercial District",
+      "description": "C-2 supports community-serving commercial uses, including retail, office, and residential.",
+      "permitted_uses": [
+        "Retail",
+        "Office",
+        "Restaurant",
+        "Service uses",
+        "Residential (often above ground floor)"
+      ],
+      "conditional_uses": [
+        "Liquor store",
+        "Automotive uses",
+        "Entertainment"
+      ],
+      "max_height_note": "Varies by height district.",
+      "bulk_note": "Standard commercial bulk; see height and bulk district."
+    }
+  ]
+}

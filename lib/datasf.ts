@@ -3,6 +3,8 @@
  * No API key required. Parcels (acdm-wktn) use geometry column "shape".
  */
 
+import type { ZoningRule } from "@/lib/zoning-rules";
+
 const DEBUG = true; // set to false once DataSF is verified
 
 export interface ParcelInfo {
@@ -24,10 +26,17 @@ export interface HeightBulkInfo {
   bulk_district: string;
 }
 
-export interface LookupResult {
+/** Result from DataSF only (no rules lookup). */
+export interface ParcelZoningResult {
   parcel: ParcelInfo | null;
   zoning: ZoningInfo | null;
   height_bulk: HeightBulkInfo | null;
+}
+
+/** Full lookup result including zoning rules from static JSON. */
+export interface LookupResult extends ParcelZoningResult {
+  zoning_rules: ZoningRule | null;
+  zoning_rules_message?: string;
 }
 
 const PARCELS_URL = "https://data.sfgov.org/resource/acdm-wktn.json";
