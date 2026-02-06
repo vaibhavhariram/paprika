@@ -1,0 +1,2 @@
+# paprika
+AI for cities
