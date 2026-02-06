@@ -4,7 +4,7 @@
     {
       "zone_code": "C-3-O",
       "name": "Downtown Office District",
-      "description": "C-3-O is a downtown commercial district permitting office, retail, and mixed uses with specific height and bulk controls.",
+      "description": "C-3-O is a downtown commercial district permitting office, retail, and mixed uses with specific height and bulk controls. High-density commercial development is encouraged in the downtown core.",
       "permitted_uses": [
         "Office",
         "Retail",
@@ -19,7 +19,9 @@
         "Institutional uses"
       ],
       "max_height_note": "Subject to height district; base streetwall and tower controls apply.",
-      "bulk_note": "Bulk measured per 132.1; base and lower tower dimensions apply in C-3-O(SD)."
+      "bulk_note": "Bulk measured per 132.1; base and lower tower dimensions apply in C-3-O(SD).",
+      "far": "9.0 (18 max)",
+      "code_sections": ["§210.2", "§215", "§260"]
     },
     {
       "zone_code": "NC-2",
@@ -38,7 +40,9 @@
         "Lodging (small)"
       ],
       "max_height_note": "Typically 40–65 ft depending on height district.",
-      "bulk_note": "Neighborhood commercial bulk limits; check height and bulk map."
+      "bulk_note": "Neighborhood commercial bulk limits; check height and bulk map.",
+      "far": "Varies",
+      "code_sections": ["§710", "§711"]
     },
     {
       "zone_code": "C-2",
@@ -57,7 +61,9 @@
         "Entertainment"
       ],
       "max_height_note": "Varies by height district.",
-      "bulk_note": "Standard commercial bulk; see height and bulk district."
+      "bulk_note": "Standard commercial bulk; see height and bulk district.",
+      "far": "Varies",
+      "code_sections": ["§209", "§210"]
     }
   ]
 }

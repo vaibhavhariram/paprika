@@ -14,6 +14,8 @@ export interface ZoningRule {
   prohibited_uses?: string[];
   max_height_note?: string;
   bulk_note?: string;
+  far?: string;
+  code_sections?: string[];
 }
 
 interface ZoningRulesData {
@@ -26,6 +28,8 @@ interface ZoningRulesData {
     prohibited_uses?: string[];
     max_height_note?: string;
     bulk_note?: string;
+    far?: string;
+    code_sections?: string[];
   }>;
 }
 
@@ -75,6 +79,8 @@ export function getZoningRulesForCode(
       prohibited_uses: rule.prohibited_uses,
       max_height_note: rule.max_height_note,
       bulk_note: rule.bulk_note,
+      far: rule.far,
+      code_sections: rule.code_sections,
     },
   };
 }
