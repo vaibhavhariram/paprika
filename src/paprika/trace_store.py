@@ -65,11 +65,19 @@ class LocalTraceStore:
         return path
 
     def load(self, run_id: str) -> Trace:
-        """Load a trace by run ID."""
-        path = self._base_dir / f"{run_id}.json"
-        if not path.exists():
-            raise TraceNotFoundError(run_id)
-        return Trace.from_json(path.read_text())
+        """Load a trace by run ID. Supports prefix match if exactly one file matches."""
+        exact = self._base_dir / f"{run_id}.json"
+        if exact.exists():
+            return Trace.from_json(exact.read_text())
+        # Prefix match: run_id may be truncated
+        matches = list(self._base_dir.glob(f"{run_id}*.json"))
+        if len(matches) == 1:
+            return Trace.from_json(matches[0].read_text())
+        if len(matches) > 1:
+            raise TraceNotFoundError(
+                f"{run_id} matches {len(matches)} traces; use a longer prefix"
+            )
+        raise TraceNotFoundError(run_id)
 
     def list_runs(self, limit: int = 20) -> list[TraceSummary]:
         """List recent traces, sorted by modification time (newest first)."""

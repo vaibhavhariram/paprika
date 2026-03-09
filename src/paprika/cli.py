@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
@@ -28,8 +29,18 @@ app.add_typer(runs_app, name="runs")
 
 TraceDirOption = Annotated[
     Path | None,
-    typer.Option(help="Custom trace directory"),
+    typer.Option(help="Custom trace directory (default: ~/.paprika/traces or PAPRIKA_TRACE_DIR)"),
 ]
+
+
+def _resolve_trace_dir(trace_dir: Path | None) -> Path | None:
+    """Resolve trace dir from arg or PAPRIKA_TRACE_DIR env."""
+    if trace_dir is not None:
+        return trace_dir
+    env_path = os.environ.get("PAPRIKA_TRACE_DIR")
+    if env_path:
+        return Path(env_path).expanduser()
+    return None
 
 
 @runs_app.command("list")
@@ -38,7 +49,7 @@ def list_runs(
     trace_dir: TraceDirOption = None,
 ) -> None:
     """List recent agent runs."""
-    store = LocalTraceStore(base_dir=trace_dir)
+    store = LocalTraceStore(base_dir=_resolve_trace_dir(trace_dir))
     summaries = store.list_runs(limit=limit)
 
     if not summaries:
@@ -50,7 +61,7 @@ def list_runs(
     for s in summaries:
         rows.append(
             [
-                s.run_id[:12] + "...",
+                s.run_id,
                 s.agent_name,
                 s.started_at.strftime("%Y-%m-%d %H:%M:%S"),
                 s.status,
@@ -69,7 +80,7 @@ def inspect_run(
     ),
 ) -> None:
     """Show detailed trace for a run."""
-    store = LocalTraceStore(base_dir=trace_dir)
+    store = LocalTraceStore(base_dir=_resolve_trace_dir(trace_dir))
     try:
         trace = store.load(run_id)
     except Exception as e:
@@ -136,7 +147,7 @@ def diff_runs(
     trace_dir: TraceDirOption = None,
 ) -> None:
     """Compare two runs step by step."""
-    store = LocalTraceStore(base_dir=trace_dir)
+    store = LocalTraceStore(base_dir=_resolve_trace_dir(trace_dir))
     try:
         trace_a = store.load(run_id_a)
         trace_b = store.load(run_id_b)

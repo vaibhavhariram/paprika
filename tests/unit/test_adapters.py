@@ -88,6 +88,21 @@ class TestLLMAdapter:
         adapter.call(provider="openai", model="gpt-4", input={"messages": []})
         assert len(hook.pre_calls[0]["hash"]) == 16
 
+    def test_mock_provider_no_network(self) -> None:
+        hook = MockLLMHook()  # no stub - will make "real" call
+        adapter = LLMAdapter(runtime_hook=hook)
+        result = adapter.call(
+            provider="mock",
+            model="mock",
+            input={
+                "messages": [{"role": "user", "content": "hi"}],
+                "_mock_response": {"choices": [{"message": {"content": "hello"}}]},
+                "_mock_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            },
+        )
+        assert result["choices"][0]["message"]["content"] == "hello"
+        assert result["usage"]["total_tokens"] == 15
+
 
 class TestToolAdapter:
     def test_calls_registered_tool(self) -> None:

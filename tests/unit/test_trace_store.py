@@ -67,6 +67,19 @@ class TestLocalTraceStore:
         with pytest.raises(TraceNotFoundError):
             store.load("nonexistent-run")
 
+    def test_load_prefix_match(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        store.save(_make_trace("abc12345-unique-id"))
+        loaded = store.load("abc12345")
+        assert loaded.run_id == "abc12345-unique-id"
+
+    def test_load_prefix_ambiguous_raises(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        store.save(_make_trace("abc111"))
+        store.save(_make_trace("abc222"))
+        with pytest.raises(TraceNotFoundError, match="matches 2 traces"):
+            store.load("abc")
+
     def test_list_runs(self, tmp_trace_dir: Path) -> None:
         store = LocalTraceStore(base_dir=tmp_trace_dir)
         store.save(_make_trace("run-1"))

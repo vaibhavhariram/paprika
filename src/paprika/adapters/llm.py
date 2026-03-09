@@ -98,6 +98,9 @@ class LLMAdapter:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Call an OpenAI-compatible chat completions endpoint."""
+        if provider == "mock":
+            return self._call_mock_provider(input_data)
+
         base_url = self._providers.get(provider)
         if base_url is None:
             msg = f"Unknown LLM provider: {provider!r}. Register it or use a known provider."
@@ -119,4 +122,19 @@ class LLMAdapter:
         response = httpx.post(url, json=body, headers=headers, timeout=120.0)
         response.raise_for_status()
         result: dict[str, Any] = response.json()
+        return result
+
+    def _call_mock_provider(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        """Return canned response for mock provider (no network, used in examples/tests)."""
+        usage = input_data.get("_mock_usage")
+        if usage is None:
+            usage = {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
+        response = input_data.get("_mock_response")
+        if response is None:
+            response = {
+                "choices": [{"message": {"content": "mock response", "role": "assistant"}}]
+            }
+        result: dict[str, Any] = dict(response) if isinstance(response, dict) else {"choices": []}
+        if "usage" not in result:
+            result["usage"] = usage
         return result

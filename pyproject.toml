@@ -1,7 +1,7 @@
 [project]
 name = "paprika"
 version = "0.1.0"
-description = "Execution control for AI agents"
+description = "Execution control infrastructure for AI agents: trace recording, policy enforcement, deterministic replay"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -11,8 +11,18 @@ dependencies = [
     "httpx>=0.25,<1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7,<9",
+    "pytest-cov>=4",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+examples = ["langgraph>=0.2,<1"]
+
 [project.scripts]
 paprika = "paprika.cli:app"
+demo = "paprika.demo:main"
 
 [build-system]
 requires = ["hatchling"]
