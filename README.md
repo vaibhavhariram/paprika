@@ -1,142 +1,96 @@
 # Paprika
 
-**Execution control infrastructure for AI agents.**
+Execution control for AI agents.
 
-Paprika is a Python SDK that sits between agent code and external systems. It records structured traces, enforces runtime policies (max steps, max tokens, repeat detection), and enables deterministic replay of prior runs.
+Paprika is a Python runtime wrapper that records execution traces, enforces runtime policies, and replays agent runs safely — so developers can debug loops, control behavior, and ship agents with confidence.
 
----
-
-## 30-Second Demo
-
-See Paprika in action (no API keys required):
+## Quickstart
 
 ```bash
-git clone https://github.com/vaibhavhariram/paprika.git
-cd paprika
-uv run demo
+pip install paprika
 ```
-
-Example output:
-
-```
-Running agent...
-  Output: 42 for Alice
-
-Trace saved: 56f3eab3-b784-47b0-901b-269ed50eca90
-
-CLI: paprika runs list
-  Run ID     Agent       Status   Steps
-  ...
-
-Inspecting run...
-  [  0] run_start  agent=demo_agent
-  [  1] tool_call_start  tool=multiply
-  ...
-
-Replaying run...
-  Replay output: 42 for Alice
-
-Demo complete. Paprika: trace, enforce, replay.
-```
-
-See [docs/DEMO.md](docs/DEMO.md) for details.
-
----
-
-## Why Paprika?
-
-Agentic systems introduce production risks: infinite loops, runaway token costs, unpredictable execution, and debugging difficulty. Traditional observability only observes; Paprika adds **runtime control**—trace, enforce limits, and replay deterministically.
-
----
-
-## Quick Start
-
-### Install
-
-```bash
-pip install -e .
-# Or: pip install paprika  (when published to PyPI)
-```
-
-Verify:
-
-```bash
-paprika runs list
-```
-
-### Wrap an Agent (~20 lines)
 
 ```python
-from paprika import PaprikaRuntime, PolicyConfig, PaprikaContext
+from paprika import PaprikaRuntime, PolicyConfig
 
-runtime = PaprikaRuntime(policy=PolicyConfig(max_steps=20))
-runtime.register_tool("lookup", lambda email: {"name": "Alice", "email": email})
+runtime = PaprikaRuntime(
+    policy=PolicyConfig(
+        max_steps=20,
+        max_tokens=20000,
+        max_repeat_hashes=3,
+    )
+)
+
+runtime.register_tool("greet", lambda name: f"Hello, {name}!")
 
 @runtime.agent()
-def support_agent(ctx: PaprikaContext, user_input: str) -> str:
-    data = ctx.tools.call(name="lookup", args={"email": "alice@example.com"})
-    return f"Summary: {data}"
+def my_agent(ctx, name):
+    return ctx.tools.call(name="greet", args={"name": name})
 
-result = support_agent("help me")
-# Traces saved to ~/.paprika/traces/
+result = my_agent("world")
+print(result)  # Hello, world!
 ```
-
-### Replay a Run
-
-```python
-result = runtime.replay(run_id="...")  # Same output, no side effects
-```
-
----
 
 ## CLI
 
 ```bash
-paprika runs list                    # List recent runs
-paprika runs inspect <run_id>        # Show event timeline
-paprika runs inspect <run_id> -v     # Include payloads
-paprika runs diff <run_a> <run_b>    # Compare runs
+# List recent runs
+paprika runs list
+
+# Inspect a run step by step
+paprika runs inspect <run-id>
+
+# Compare two runs
+paprika runs diff <run-id-a> <run-id-b>
 ```
 
-Use `--trace-dir` or `PAPRIKA_TRACE_DIR` for a custom trace directory.
+## Replay
 
----
-
-## Integration Examples
-
-```bash
-python examples/basic_agent.py
-python examples/policy_violation_agent.py --policy max_steps
-python examples/replay_demo.py <run_id>
-python examples/simple_agent_loop.py              # Vanilla agent loop
-python examples/langgraph_integration.py           # LangGraph (pip install -e ".[examples]")
+```python
+# Replay a prior run — no live API calls, no side effects
+result = runtime.replay(run_id="<run-id>")
 ```
 
-See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) and [docs/QUICKSTART.md](docs/QUICKSTART.md).
+## Features
 
----
+- **Structured traces** — Every LLM call, tool invocation, and state transition recorded as typed events
+- **Runtime policies** — `max_steps`, `max_tokens`, `max_repeat_hashes` halt execution before damage is done
+- **Deterministic replay** — Re-execute prior runs using cached outputs with mismatch detection
+- **CLI inspection** — List, inspect, and diff traces from the command line
+- **Framework-agnostic** — Works with LangGraph, CrewAI, AutoGen, or vanilla Python agents
 
-## Limitations (v1)
+## Project Structure
 
-- **Replay** — Programmatic only (`runtime.replay()`); no `paprika runs replay` CLI
-- **Storage** — Local JSON in `~/.paprika/traces/`; no cloud
-- **Tools** — Use `ctx.tools.call(name=..., args={...})` with `args` dict
-- **LLM** — OpenAI-compatible; use `provider="mock"` for examples
-
----
+```
+paprika/
+├── src/paprika/          # Python SDK
+├── tests/                # Test suite
+├── examples/             # Example scripts
+├── apps/web/             # Marketing website (Next.js)
+└── pyproject.toml
+```
 
 ## Development
 
 ```bash
-pip install -e ".[dev]"
-pytest
-ruff check src/ tests/
-mypy src/
+# SDK development
+uv sync --dev
+uv run pytest
+uv run ruff check src/ tests/
+uv run mypy src/
+
+# Marketing site
+cd apps/web
+npm install
+npm run dev
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Current Limitations
 
----
+- Traces are stored locally as JSON files (no hosted storage yet)
+- Traces may contain sensitive prompt/tool data (no redaction yet)
+- Designed for development/staging (production hardening on roadmap)
+- Only OpenAI-compatible LLM providers in v1
 
 ## License
 
