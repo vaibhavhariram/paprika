@@ -18,6 +18,10 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.8",
 ]
+ui = [
+    "fastapi>=0.100,<1",
+    "uvicorn>=0.20,<1",
+]
 examples = ["langgraph>=0.2,<1"]
 
 [project.scripts]
