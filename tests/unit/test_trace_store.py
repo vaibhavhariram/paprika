@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from paprika.errors import TraceNotFoundError
+from paprika.errors import InvalidRunIdError, TraceNotFoundError
 from paprika.events import RunEndEvent, RunStartEvent
-from paprika.trace_store import LocalTraceStore, Trace
+from paprika.trace_store import LocalTraceStore, Trace, validate_run_id
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -109,3 +109,162 @@ class TestLocalTraceStore:
         assert new_dir.exists()
         store.save(_make_trace())
         assert store.load("test-run-1").run_id == "test-run-1"
+
+
+class TestValidateRunId:
+    """Tests for the run_id validation function."""
+
+    def test_valid_uuid(self) -> None:
+        validate_run_id("550e8400-e29b-41d4-a716-446655440000")
+
+    def test_valid_simple_id(self) -> None:
+        validate_run_id("test-run-1")
+
+    def test_valid_with_dots(self) -> None:
+        validate_run_id("run.2024.01.15")
+
+    def test_valid_with_underscores(self) -> None:
+        validate_run_id("my_run_id")
+
+    def test_valid_alphanumeric(self) -> None:
+        validate_run_id("abc123")
+
+    def test_reject_empty_string(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("")
+
+    def test_reject_dotdot(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("..")
+
+    def test_reject_traversal_unix(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("../../../etc/passwd")
+
+    def test_reject_traversal_mixed(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("a/../../b")
+
+    def test_reject_absolute_path(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("/etc/passwd")
+
+    def test_reject_backslash_traversal(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("..\\..\\windows\\system32")
+
+    def test_reject_glob_star(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("*")
+
+    def test_reject_glob_question(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("run?")
+
+    def test_reject_glob_bracket(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("run[0-9]")
+
+    def test_reject_slash(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("foo/bar")
+
+    def test_reject_leading_dot(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id(".hidden")
+
+    def test_reject_leading_hyphen(self) -> None:
+        with pytest.raises(InvalidRunIdError):
+            validate_run_id("-flag")
+
+
+class TestTraceStoreTraversalProtection:
+    """Tests that the trace store rejects directory traversal attempts."""
+
+    def test_load_traversal_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("../../../etc/passwd")
+
+    def test_delete_traversal_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.delete("../../../etc/passwd")
+
+    def test_load_dotdot_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("..")
+
+    def test_load_absolute_path_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("/etc/passwd")
+
+    def test_load_backslash_traversal_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("..\\..\\windows\\system32")
+
+    def test_load_glob_metachar_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("*")
+
+    def test_delete_empty_rejected(self, tmp_trace_dir: Path) -> None:
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.delete("")
+
+    def test_path_stays_under_base_dir(self, tmp_trace_dir: Path) -> None:
+        """Verify that _safe_trace_path always returns a path under base_dir."""
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        path = store._safe_trace_path("valid-run-id")
+        assert path.resolve().is_relative_to(tmp_trace_dir.resolve())
+
+    def test_save_with_traversal_run_id_rejected(self, tmp_trace_dir: Path) -> None:
+        """Ensure save also validates run_id."""
+        store = LocalTraceStore(base_dir=tmp_trace_dir)
+        trace = Trace(run_id="../../../etc/passwd", agent_name="evil")
+        with pytest.raises(InvalidRunIdError):
+            store.save(trace)
+
+    def test_outside_file_not_accessible(self, tmp_path: Path) -> None:
+        """Plant a file outside trace dir and confirm it can't be read."""
+        trace_dir = tmp_path / "traces"
+        trace_dir.mkdir()
+        secret = tmp_path / "secret.json"
+        secret.write_text('{"run_id": "secret", "agent_name": "x", "events": []}')
+
+        store = LocalTraceStore(base_dir=trace_dir)
+        with pytest.raises(InvalidRunIdError):
+            store.load("../secret")
+
+
+class TestCLITraversalProtection:
+    """Tests that CLI commands surface clean errors for invalid run IDs."""
+
+    def test_inspect_invalid_run_id(self, tmp_trace_dir: Path) -> None:
+        from typer.testing import CliRunner
+
+        from paprika.cli import app
+
+        runner = CliRunner()
+        result = runner.invoke(
+            app,
+            ["runs", "inspect", "../../../etc/passwd", "--trace-dir", str(tmp_trace_dir)],
+        )
+        assert result.exit_code != 0
+        assert "Invalid run_id" in result.output or "Error" in result.output
+
+    def test_diff_invalid_run_id(self, tmp_trace_dir: Path) -> None:
+        from typer.testing import CliRunner
+
+        from paprika.cli import app
+
+        runner = CliRunner()
+        result = runner.invoke(
+            app,
+            ["runs", "diff", "../bad", "also/../bad", "--trace-dir", str(tmp_trace_dir)],
+        )
+        assert result.exit_code != 0

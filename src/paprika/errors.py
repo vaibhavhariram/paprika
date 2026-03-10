@@ -39,3 +39,14 @@ class TraceNotFoundError(PaprikaError):
     def __init__(self, run_id: str) -> None:
         self.run_id = run_id
         super().__init__(f"Trace not found for run_id: {run_id}")
+
+
+class InvalidRunIdError(PaprikaError):
+    """Raised when a run_id contains unsafe or invalid characters."""
+
+    def __init__(self, run_id: str) -> None:
+        self.run_id = run_id
+        super().__init__(
+            f"Invalid run_id: {run_id!r}. "
+            "Run IDs must contain only alphanumeric characters, hyphens, underscores, and dots."
+        )
