@@ -4,24 +4,17 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import typer
 
-from paprika._formatting import format_duration, format_table, truncate
-from paprika.events import (
-    LLMCallEndEvent,
-    LLMCallStartEvent,
-    PolicyViolationEvent,
-    RunEndEvent,
-    RunStartEvent,
-    ToolCallEndEvent,
-    ToolCallStartEvent,
+from paprika._formatting import format_duration, format_table
+from paprika.execution_record import (
+    LLMCallStep,
+    PolicyViolationStep,
+    ToolCallStep,
 )
 from paprika.trace_store import LocalTraceStore
-
-if TYPE_CHECKING:
-    from paprika.events import TraceEvent
 
 app = typer.Typer(name="paprika", help="Execution control for AI agents")
 runs_app = typer.Typer(help="Inspect and manage agent runs")
@@ -82,62 +75,104 @@ def inspect_run(
     """Show detailed trace for a run."""
     store = LocalTraceStore(base_dir=_resolve_trace_dir(trace_dir))
     try:
-        trace = store.load(run_id)
+        record = store.load_record(run_id)
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1) from e
 
-    typer.echo(f"Run ID:     {trace.run_id}")
-    typer.echo(f"Agent:      {trace.agent_name}")
-    typer.echo(f"Started:    {trace.started_at}")
-    if trace.ended_at:
-        typer.echo(f"Ended:      {trace.ended_at}")
-    if trace.metadata:
-        typer.echo(f"Metadata:   {trace.metadata}")
+    typer.echo(f"Run ID:     {record.record_id}")
+    typer.echo(f"Agent:      {record.agent.name}")
+    typer.echo(f"Started:    {record.execution.started_at}")
+    if record.execution.ended_at:
+        typer.echo(f"Ended:      {record.execution.ended_at}")
+    typer.echo(f"Status:     {record.execution.status}")
+    if record.totals.total_tokens > 0:
+        typer.echo(f"Tokens:     {record.totals.total_tokens}")
+    if record.replay_of:
+        typer.echo(f"Replay of:  {record.replay_of}")
     typer.echo("")
 
-    for event in trace.events:
-        _print_event(event, verbose=verbose)
+    for step in record.steps:
+        _print_step(step, verbose=verbose)
 
 
-def _print_event(event: TraceEvent, *, verbose: bool) -> None:
-    """Print a single trace event."""
-    line = f"  [{event.step_index:>3}] {event.event_type}"
+def _print_step(
+    step: LLMCallStep | ToolCallStep | PolicyViolationStep,
+    *,
+    verbose: bool,
+) -> None:
+    """Print a single execution step."""
+    if isinstance(step, LLMCallStep):
+        line = f"  [{step.step_index:>3}] llm_call  provider={step.provider} model={step.model}"
+        line += f"  {format_duration(step.duration_ms)}"
+        if step.token_usage is not None:
+            line += f"  tokens={step.token_usage.total_tokens}"
+        typer.echo(line)
+        if verbose:
+            typer.echo(f"         input: {step.input_data}")
+            typer.echo(f"         output: {step.output_data}")
+    elif isinstance(step, ToolCallStep):
+        line = f"  [{step.step_index:>3}] tool_call  tool={step.tool_name}"
+        line += f"  {format_duration(step.duration_ms)}"
+        typer.echo(line)
+        if verbose:
+            typer.echo(f"         args: {step.args}")
+            typer.echo(f"         output: {step.output_data}")
+    elif isinstance(step, PolicyViolationStep):
+        line = f"  [{step.step_index:>3}] policy_violation  policy={step.policy_name}"
+        typer.echo(line)
+        if verbose:
+            typer.echo(f"         message: {step.message}")
+            typer.echo(f"         details: {step.details}")
 
-    if isinstance(event, RunStartEvent):
-        line += f"  agent={event.agent_name}"
-    elif isinstance(event, RunEndEvent):
-        line += f"  status={event.status}"
-        if event.total_tokens > 0:
-            line += f"  total_tokens={event.total_tokens}"
-        if event.error is not None:
-            line += f"  error={truncate(event.error, 60)}"
-    elif isinstance(event, LLMCallStartEvent):
-        line += f"  provider={event.provider} model={event.model}"
-    elif isinstance(event, LLMCallEndEvent):
-        line += f"  {format_duration(event.duration_ms)}"
-        if event.token_usage is not None:
-            line += f"  tokens={event.token_usage.total_tokens}"
-    elif isinstance(event, ToolCallStartEvent):
-        line += f"  tool={event.tool_name}"
-    elif isinstance(event, ToolCallEndEvent):
-        line += f"  {format_duration(event.duration_ms)}"
-    elif isinstance(event, PolicyViolationEvent):
-        line += f"  policy={event.policy_name}"
 
-    typer.echo(line)
+@app.command("ui")
+def launch_ui(
+    port: int = typer.Option(8787, help="Port for the UI server"),  # noqa: B008
+    trace_dir: TraceDirOption = None,
+    no_open: bool = typer.Option(  # noqa: B008
+        False, "--no-open", help="Don't auto-open the browser"
+    ),
+) -> None:
+    """Launch the Paprika trace viewer in your browser."""
+    try:
+        import uvicorn  # noqa: F811
+    except ImportError:
+        typer.echo(
+            "Paprika UI requires extra dependencies.\n"
+            "Install them with:  pip install paprika[ui]",
+            err=True,
+        )
+        raise typer.Exit(1) from None
 
-    if verbose:
-        if isinstance(event, LLMCallStartEvent):
-            typer.echo(f"         input: {event.input_data}")
-        elif isinstance(event, LLMCallEndEvent):
-            typer.echo(f"         output: {event.output_data}")
-        elif isinstance(event, ToolCallStartEvent):
-            typer.echo(f"         args: {event.args}")
-        elif isinstance(event, ToolCallEndEvent):
-            typer.echo(f"         output: {event.output_data}")
-        elif isinstance(event, RunStartEvent):
-            typer.echo(f"         input_args: {event.input_args}")
+    from paprika.ui import create_app
+
+    resolved = _resolve_trace_dir(trace_dir)
+    store = LocalTraceStore(base_dir=resolved)
+    ui_app = create_app(store)
+    url = f"http://127.0.0.1:{port}"
+
+    if not no_open:
+        import threading
+        import webbrowser
+
+        def _open_browser() -> None:
+            try:
+                webbrowser.open(url)
+            except Exception:  # noqa: BLE001
+                pass
+
+        threading.Timer(1.5, _open_browser).start()
+
+    typer.echo(f"Paprika UI running at {url}")
+    typer.echo(f"Serving traces from {store.base_dir}")
+    typer.echo("Press Ctrl+C to stop.")
+    try:
+        uvicorn.run(ui_app, host="127.0.0.1", port=port, log_level="warning")
+    except OSError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        typer.echo(f"Port {port} may be in use. Try: paprika ui --port {port + 1}", err=True)
+        raise typer.Exit(1) from exc
 
 
 @runs_app.command("diff")
@@ -149,35 +184,35 @@ def diff_runs(
     """Compare two runs step by step."""
     store = LocalTraceStore(base_dir=_resolve_trace_dir(trace_dir))
     try:
-        trace_a = store.load(run_id_a)
-        trace_b = store.load(run_id_b)
+        record_a = store.load_record(run_id_a)
+        record_b = store.load_record(run_id_b)
     except Exception as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1) from e
 
-    events_a = trace_a.events
-    events_b = trace_b.events
+    steps_a = record_a.steps
+    steps_b = record_b.steps
 
-    typer.echo(f"Run A: {trace_a.run_id}  ({len(events_a)} events)")
-    typer.echo(f"Run B: {trace_b.run_id}  ({len(events_b)} events)")
+    typer.echo(f"Run A: {record_a.record_id}  ({len(steps_a)} steps)")
+    typer.echo(f"Run B: {record_b.record_id}  ({len(steps_b)} steps)")
     typer.echo("")
 
-    max_len = max(len(events_a), len(events_b))
+    max_len = max(len(steps_a), len(steps_b))
     mismatches = 0
 
     for i in range(max_len):
-        ea = events_a[i] if i < len(events_a) else None
-        eb = events_b[i] if i < len(events_b) else None
+        sa = steps_a[i] if i < len(steps_a) else None
+        sb = steps_b[i] if i < len(steps_b) else None
 
-        type_a = ea.event_type if ea else "—"
-        type_b = eb.event_type if eb else "—"
+        type_a = sa.step_type if sa else "—"
+        type_b = sb.step_type if sb else "—"
 
         if type_a != type_b:
             typer.echo(f"  [{i}] MISMATCH  A={type_a}  B={type_b}")
             mismatches += 1
         else:
-            hash_a = getattr(ea, "input_hash", None)
-            hash_b = getattr(eb, "input_hash", None)
+            hash_a = getattr(sa, "input_hash", None)
+            hash_b = getattr(sb, "input_hash", None)
             if hash_a and hash_b and hash_a != hash_b:
                 typer.echo(f"  [{i}] HASH DIFF  type={type_a}  A={hash_a[:8]}  B={hash_b[:8]}")
                 mismatches += 1

@@ -1,4 +1,8 @@
-"""Tests for CLI commands."""
+"""Tests for CLI commands.
+
+CLI tests save v0 Trace objects to exercise the full migration pipeline:
+store.save(v0) → load_record() → ExecutionRecord for inspect/diff.
+"""
 
 from __future__ import annotations
 
@@ -74,8 +78,18 @@ class TestInspectCommand:
         assert result.exit_code == 0
         assert "test-run-abc123" in result.output
         assert "test_agent" in result.output
-        assert "run_start" in result.output
-        assert "tool_call_start" in result.output
+        # Merged step output: shows "tool_call" (not "tool_call_start")
+        assert "tool_call" in result.output
+        assert "greet" in result.output
+
+    def test_inspect_shows_status(self, tmp_trace_dir: Path) -> None:
+        _create_sample_trace(tmp_trace_dir)
+        result = runner.invoke(
+            app, ["runs", "inspect", "test-run-abc123", "--trace-dir", str(tmp_trace_dir)]
+        )
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "success" in result.output
 
     def test_inspect_verbose(self, tmp_trace_dir: Path) -> None:
         _create_sample_trace(tmp_trace_dir)
@@ -103,9 +117,19 @@ class TestDiffCommand:
         assert result.exit_code == 0
         assert "structurally identical" in result.output
 
+    def test_diff_shows_step_count(self, tmp_trace_dir: Path) -> None:
+        """Diff output should report step counts (not event counts)."""
+        _create_sample_trace(tmp_trace_dir, "run-a")
+        _create_sample_trace(tmp_trace_dir, "run-b")
+        result = runner.invoke(
+            app, ["runs", "diff", "run-a", "run-b", "--trace-dir", str(tmp_trace_dir)]
+        )
+        assert result.exit_code == 0
+        assert "1 steps" in result.output  # one tool_call step
+
     def test_diff_different_lengths(self, tmp_trace_dir: Path) -> None:
         _create_sample_trace(tmp_trace_dir, "run-a")
-        # Create a shorter trace
+        # Create a shorter trace with no tool call steps
         store = LocalTraceStore(base_dir=tmp_trace_dir)
         trace_b = Trace(run_id="run-b", agent_name="test_agent")
         trace_b.events = [

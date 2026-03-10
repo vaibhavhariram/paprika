@@ -293,8 +293,8 @@ class PaprikaRuntime:
 
     def replay(self, run_id: str) -> Any:
         """Re-execute an agent run using recorded outputs from a prior trace."""
-        trace = self._trace_store.load(run_id)
-        agent_name = trace.agent_name
+        record = self._trace_store.load_record(run_id)
+        agent_name = record.agent.name
         func = self._registered_agents.get(agent_name)
         if func is None:
             msg = (
@@ -303,16 +303,14 @@ class PaprikaRuntime:
             )
             raise PaprikaError(msg)
 
-        replay_engine = ReplayEngine(trace)
+        replay_engine = ReplayEngine(record)
 
-        # Extract original input args
+        # Extract original input args from canonical top-level field
         original_args: tuple[Any, ...] = ()
         original_kwargs: dict[str, Any] = {}
-        for event in trace.events:
-            if isinstance(event, RunStartEvent):
-                original_args = tuple(event.input_args.get("args", []))
-                original_kwargs = event.input_args.get("kwargs", {})
-                break
+        if isinstance(record.input, dict):
+            original_args = tuple(record.input.get("args", []))
+            original_kwargs = record.input.get("kwargs", {})
 
         return self._execute_agent(
             func,

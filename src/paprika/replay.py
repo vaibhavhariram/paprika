@@ -5,22 +5,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from paprika.errors import ReplayMismatchError
-from paprika.events import (
-    LLMCallEndEvent,
-    LLMCallStartEvent,
-    ToolCallEndEvent,
-    ToolCallStartEvent,
-)
+from paprika.execution_record import LLMCallStep, ToolCallStep
 
 if TYPE_CHECKING:
-    from paprika.trace_store import Trace
+    from paprika.execution_record import ExecutionRecord
 
 
 class ReplayEngine:
-    """Replays a prior run by returning recorded outputs instead of making live calls."""
+    """Replays a prior run by returning recorded outputs instead of making live calls.
 
-    def __init__(self, trace: Trace) -> None:
-        self._trace = trace
+    Accepts an ExecutionRecord and builds stub lookup maps from its merged steps.
+    """
+
+    def __init__(self, record: ExecutionRecord) -> None:
+        self._record = record
         self._llm_stubs: dict[int, dict[str, Any]] = {}
         self._tool_stubs: dict[int, Any] = {}
         self._llm_hashes: dict[int, str] = {}
@@ -28,26 +26,16 @@ class ReplayEngine:
         self._build_stubs()
 
     def _build_stubs(self) -> None:
-        """Build lookup maps from the trace events."""
-        events = self._trace.events
-        for i, event in enumerate(events):
-            step = event.step_index
-
-            if isinstance(event, LLMCallStartEvent):
-                self._llm_hashes[step] = event.input_hash
-                for j in range(i + 1, len(events)):
-                    end_evt = events[j]
-                    if isinstance(end_evt, LLMCallEndEvent) and end_evt.step_index == step:
-                        self._llm_stubs[step] = end_evt.output_data
-                        break
-
-            elif isinstance(event, ToolCallStartEvent):
-                self._tool_hashes[step] = event.input_hash
-                for j in range(i + 1, len(events)):
-                    end_evt = events[j]
-                    if isinstance(end_evt, ToolCallEndEvent) and end_evt.step_index == step:
-                        self._tool_stubs[step] = end_evt.output_data
-                        break
+        """Build lookup maps from canonical merged steps."""
+        for step in self._record.steps:
+            if isinstance(step, LLMCallStep):
+                self._llm_hashes[step.step_index] = step.input_hash
+                if step.output_data is not None:
+                    self._llm_stubs[step.step_index] = step.output_data
+            elif isinstance(step, ToolCallStep):
+                self._tool_hashes[step.step_index] = step.input_hash
+                if step.output_data is not None:
+                    self._tool_stubs[step.step_index] = step.output_data
 
     def get_llm_stub(self, step_index: int, input_hash: str) -> dict[str, Any]:
         """Get the recorded LLM output for a given step."""
