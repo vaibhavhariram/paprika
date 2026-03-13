@@ -37,8 +37,10 @@ def truncate(s: str, max_len: int = 80) -> str:
     return s[: max_len - 3] + "..."
 
 
-def format_duration(ms: float) -> str:
+def format_duration(ms: float | None) -> str:
     """Format a duration in milliseconds to a human-readable string."""
+    if ms is None:
+        return "--"
     if ms < 1:
         return f"{ms * 1000:.0f}µs"
     if ms < 1000:
