@@ -1,153 +1,259 @@
-# Paprika Integration Guide
+# Integrations
 
-This document explains how Paprika integrates with existing agent frameworks and patterns.
+Paprika works with any Python agent framework. The integration pattern is universal: wrap the entry point, route LLM calls through context, register tools.
 
----
+## General Pattern
 
-## Core Idea
+All integrations follow this pattern:
 
-Paprika wraps **execution**, not frameworks. It intercepts LLM and tool calls via a context object (`ctx`) that you pass through your agent code. All calls must go through:
+1. Create a `PaprikaRuntime`
+2. Register tools with `runtime.register_tool(name, func)`
+3. Wrap your agent execution with `@runtime.agent(name="...")`
+4. Route LLM calls through `ctx.llm.call(...)`
+5. Route tool calls through `ctx.tools.call(...)`
 
-- `ctx.llm.call(provider=..., model=..., input=...)`
-- `ctx.tools.call(name=..., args={...})`
+That's it. No magic, no framework lock-in.
 
-If your agent uses these, Paprika will trace, enforce policies, and enable replay.
+## Vanilla Python
 
----
-
-## Recommended Wrapping Patterns
-
-### 1. Vanilla Agent Loop
-
-**Pattern:** `while` / `for` loop with reasoning (LLM) → tool → decision (LLM).
-
-**How to wrap:** Put the entire loop inside a single `@runtime.agent()` function. Use `ctx` for every LLM and tool invocation.
+Full example: a multi-step research agent.
 
 ```python
-@runtime.agent()
-def agent_loop(ctx: PaprikaContext, user_query: str) -> str:
-    messages = [{"role": "user", "content": user_query}]
-    for _ in range(max_iterations):
-        reasoning = ctx.llm.call(provider="openai", model="gpt-4", input={"messages": messages})
-        # ... parse reasoning ...
-        tool_result = ctx.tools.call(name="search", args={"query": q})
-        messages.append(...)
-        decision = ctx.llm.call(...)
-        if done:
-            break
-    return final_answer
+from paprika import PaprikaRuntime, PolicyConfig
+
+# Create runtime
+runtime = PaprikaRuntime(
+    policy=PolicyConfig(max_steps=20, max_tokens=50000)
+)
+
+# Register tools
+def search(query: str) -> str:
+    return f"Results for '{query}': AI is advancing..."
+
+def summarize_tool(text: str) -> str:
+    return f"Summary: {text[:100]}..."
+
+runtime.register_tool("search", search)
+runtime.register_tool("summarize", summarize_tool)
+
+# Define agent
+@runtime.agent(name="researcher")
+def researcher(ctx, topic: str):
+    # Step 1: LLM generates research question
+    response = ctx.llm.call(
+        provider="openai",
+        model="gpt-4o",
+        input={
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"Generate a research question about {topic}"
+                }
+            ]
+        }
+    )
+    question = response["choices"][0]["message"]["content"]
+
+    # Step 2: Search for results
+    search_result = ctx.tools.call(
+        name="search",
+        args={"query": question}
+    )
+
+    # Step 3: Summarize results
+    summary = ctx.tools.call(
+        name="summarize",
+        args={"text": search_result}
+    )
+
+    return {
+        "question": question,
+        "results": search_result,
+        "summary": summary
+    }
+
+# Run the agent
+if __name__ == "__main__":
+    result = researcher("machine learning")
+    print(result)
 ```
 
-**Example:** `examples/simple_agent_loop.py`
+## LangGraph
 
-**Friction:** None. The loop body is your agent logic; you replace raw `llm()`/`tool()` calls with `ctx.llm.call()`/`ctx.tools.call()`.
-
----
-
-### 2. LangGraph (or Similar Graph Runtimes)
-
-**Pattern:** Nodes receive state, return state updates. Some nodes call LLMs, others call tools.
-
-**How to wrap:** Inject `paprika_ctx` into the graph state. Each node that does LLM/tool work reads `ctx` from state and uses it.
+Wrap a LangGraph graph execution and route LLM calls through context.
 
 ```python
-# State schema
-class GraphState(TypedDict, total=False):
-    messages: list
-    paprika_ctx: Any  # Injected by Paprika agent
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, START, END
+from paprika import PaprikaRuntime
 
-# Agent wraps graph.invoke()
-@runtime.agent()
-def langgraph_agent(ctx: PaprikaContext, query: str) -> str:
-    state = {"messages": [{"role": "user", "content": query}], "paprika_ctx": ctx}
-    result = graph.invoke(state)
-    return result["result"]
+# Set up Paprika
+runtime = PaprikaRuntime()
 
-# Nodes use ctx from state
-def llm_node(state: GraphState):
-    ctx = state["paprika_ctx"]
-    resp = ctx.llm.call(provider="openai", model="gpt-4", input={"messages": state["messages"]})
-    return {"messages": [...]}
+# Define tool
+def search(query: str) -> str:
+    return f"Search results for {query}"
 
-def tool_node(state: GraphState):
-    ctx = state["paprika_ctx"]
-    out = ctx.tools.call(name="lookup", args={"key": "x"})
-    return {"messages": [...]}
+runtime.register_tool("search", search)
+
+# Define LangGraph nodes
+def node_generate_question(state):
+    response = state["ctx"].llm.call(
+        provider="openai",
+        model="gpt-4o",
+        input={
+            "messages": [
+                {"role": "user", "content": "Generate a question about AI"}
+            ]
+        }
+    )
+    state["question"] = response["choices"][0]["message"]["content"]
+    return state
+
+def node_search(state):
+    result = state["ctx"].tools.call(
+        name="search",
+        args={"query": state["question"]}
+    )
+    state["search_result"] = result
+    return state
+
+# Build graph
+graph_builder = StateGraph(dict)
+graph_builder.add_node("generate", node_generate_question)
+graph_builder.add_node("search", node_search)
+graph_builder.add_edge(START, "generate")
+graph_builder.add_edge("generate", "search")
+graph_builder.add_edge("search", END)
+graph = graph_builder.compile()
+
+# Wrap graph execution with Paprika agent
+@runtime.agent(name="langgraph_agent")
+def run_graph(ctx):
+    initial_state = {"ctx": ctx}
+    result = graph.invoke(initial_state)
+    return result
+
+# Run
+if __name__ == "__main__":
+    result = run_graph()
+    print(result)
 ```
 
-**Example:** `examples/langgraph_integration.py`
+**Key:** Pass `ctx` into the graph state so nodes can access it. Route all LLM calls and tool calls through `ctx.llm.call()` and `ctx.tools.call()`.
 
-**Friction:** You must thread `paprika_ctx` through state. Nodes cannot use LangGraph’s native tool/LLM bindings—they must use `ctx.llm.call()` and `ctx.tools.call()`.
+## CrewAI
 
----
-
-### 3. Function-Call Style Agents
-
-**Pattern:** Agent returns structured tool calls; executor runs them; result fed back.
-
-**How to wrap:** The executor (the part that actually invokes tools and optionally LLMs) must use `ctx`. Typically:
-
-- Parse tool calls from LLM output
-- For each call: `result = ctx.tools.call(name=..., args=...)`
-- Feed results back via `ctx.llm.call()` for the next turn
-
-Same rules: all external calls go through `ctx`.
-
----
-
-## Limitations Discovered
-
-### 1. Tools Must Use `args` Dict
-
-Paprika’s `ctx.tools.call(name="x", args={"a": 1, "b": 2})` expects keyword args as a dict. If your tools take positional args or a different shape, you need an adapter:
+Wrap crew execution and route decisions through Paprika context.
 
 ```python
-def my_tool(a: int, b: str) -> str:
-    return f"{a}-{b}"
+from crewai import Agent, Task, Crew
+from paprika import PaprikaRuntime, PolicyConfig
 
-# Adapter for Paprika
-runtime.register_tool("my_tool", lambda **kwargs: my_tool(kwargs["a"], kwargs["b"]))
-# Or: register_tool("my_tool", lambda a, b=None: my_tool(a, b or ""))
+# Set up Paprika
+runtime = PaprikaRuntime(
+    policy=PolicyConfig(max_steps=30)
+)
+
+# Register tools
+from crewai_tools import SerperDevTool
+search_tool = SerperDevTool()
+runtime.register_tool("search", lambda query: search_tool.run(query))
+
+@runtime.agent(name="crew_researcher")
+def research_crew(ctx):
+    def crew_search(query: str):
+        return ctx.tools.call(name="search", args={"query": query})
+
+    result = crew_search("latest AI trends")
+    return result
+
+# Run
+if __name__ == "__main__":
+    result = research_crew()
+    print(result)
 ```
 
-### 2. No Native Framework Binding Interception
+**Note:** CrewAI does not expose agent internals for context injection. Integration requires wrapping CrewAI's LLM calls via monkey-patching, logging trajectory post-execution, or using a custom LLM provider. This is pattern-level integration, not deep integration.
 
-Paprika does not patch LangChain/LangGraph/OpenAI SDKs. You must route calls through `ctx.llm.call()` and `ctx.tools.call()`. Framework-native `bind_tools`, `agent_executor`, etc. will **not** be traced unless you wrap their internals.
+## AutoGen
 
-### 3. Replay Requires Identical Agent Setup
+Wrap agent conversations and route through Paprika.
 
-`runtime.replay(run_id)` needs the same agent (by name) registered. If you add/remove tools or change the graph structure, replay can fail with `ReplayMismatchError` when the execution path diverges.
+```python
+from autogen import AssistantAgent, UserProxyAgent
+from paprika import PaprikaRuntime
 
-### 4. State in Graph Frameworks
+runtime = PaprikaRuntime()
 
-For LangGraph, state is merged across nodes. Ensure `paprika_ctx` is set once in the initial state and not overwritten. Nodes that do not return `paprika_ctx` typically preserve it (merge semantics depend on the framework).
+assistant = AssistantAgent(name="assistant", llm_config={"model": "gpt-4o"})
+user_proxy = UserProxyAgent(name="user", human_input_mode="NEVER")
 
-### 5. Mock Provider for Testing
+@runtime.agent(name="autogen_chat")
+def run_autogen(ctx, task: str):
+    user_proxy.initiate_chat(
+        assistant,
+        message=task,
+        max_consecutive_auto_reply=5
+    )
 
-Use `provider="mock"` with `_mock_response` and `_mock_usage` in `input` for deterministic examples and tests without API keys. See `examples/policy_violation_agent.py`.
+    messages = user_proxy.chat_messages[assistant]
+    return {
+        "messages": messages,
+        "status": "completed"
+    }
 
----
+# Run
+if __name__ == "__main__":
+    result = run_autogen(ctx=None, task="Research AI trends")
+    print(result)
+```
 
-## Best Practices for Tool and LLM Adapters
+**Note:** Like CrewAI, AutoGen does not expose internal LLM calls. Integration is pattern-level: wrap execution, log trajectory post-execution.
 
-### Tools
+## Integration Maturity
 
-- **Register before agent runs:** `runtime.register_tool(...)` must be called before the first agent invocation.
-- **Args as dict:** Tools are invoked with `**args`; ensure your functions accept the keys you pass.
-- **Deterministic for replay:** Non-deterministic tools (e.g. random, time) can cause replay mismatches if the *recorded* output is reused but the hash check passes (hash is on input only). Prefer deterministic tools or document non-replayability.
+| Framework | Type | Maturity | Notes |
+|-----------|------|----------|-------|
+| Vanilla Python | Deep (context injection) | Production | Full step-by-step recording |
+| LangGraph | Deep (state-based injection) | Production | Pass context in state |
+| CrewAI | Pattern-level | Experimental | Wrapping/logging only |
+| AutoGen | Pattern-level | Experimental | Wrapping/logging only |
 
-### LLM
+**Deep integration:** Paprika context used directly, full recording.
+**Pattern-level integration:** Entry point wrapped, trajectory logged.
 
-- **Use `input` for messages:** `ctx.llm.call(provider="openai", model="gpt-4", input={"messages": [...]})` follows OpenAI chat completions shape.
-- **Provider `mock`:** For tests/examples, use `provider="mock"` with `_mock_response` and `_mock_usage` in `input`.
-- **Token usage:** Real providers should return `usage` in the response for `max_tokens` policy enforcement.
+## Custom Frameworks
 
----
+For any agent framework:
 
-## Summary
+1. **Route LLM calls:**
+   ```python
+   response = ctx.llm.call(
+       provider="openai",
+       model="gpt-4o",
+       input={...}
+   )
+   ```
 
-| Pattern              | Wrapping approach                         | Friction level |
-|----------------------|-------------------------------------------|----------------|
-| Vanilla loop         | Single `@agent()` with `ctx` in loop body | Low            |
-| LangGraph / graphs   | `paprika_ctx` in state, nodes use ctx      | Medium         |
-| Framework-native     | Must replace with ctx-based calls         | High           |
+2. **Route tool calls:**
+   ```python
+   result = ctx.tools.call(
+       name="tool_name",
+       args={...}
+   )
+   ```
+
+3. **Wrap entry point:**
+   ```python
+   @runtime.agent(name="my_agent")
+   def my_agent(ctx):
+       # ... your framework logic ...
+       pass
+   ```
+
+## Next Steps
+
+- Set up runtime policies: [Policies](core-concepts/policies.md)
+- Understand execution records: [Execution Records](core-concepts/execution-records.md)
+- Master replay: [Replay Engine](core-concepts/replay.md)
