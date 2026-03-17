@@ -1,3 +1,6 @@
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,40 +10,91 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 5%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 40%;
     --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 50%;
     --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 5%;
+    --accent-foreground: 0 0% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 5%;
-    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --destructive: 0 72% 51%;
+    --radius: 0.625rem;
+
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 0 0% 5%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --error: 0 72% 51%;
   }
 
   .dark {
-    --background: 0 0% 4.5%;
-    --foreground: 0 0% 93%;
+    --background: 0 0% 3.5%;
+    --foreground: 0 0% 95%;
     --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 55%;
-    --border: 0 0% 15%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 93%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 93%;
+    --muted-foreground: 0 0% 45%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 0 0% 30%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 95%;
+    --card: 0 0% 5.5%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 5.5%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --destructive: 0 62% 55%;
+    --radius: 0.625rem;
+
+    --sidebar: 0 0% 4.5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+
+    --success: 142 76% 40%;
+    --warning: 38 92% 55%;
+    --error: 0 62% 55%;
   }
 }
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    @apply border-border;
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
   }
+}
+
+/* Force the thinnest look across the UI. */
+:where(h1, h2, h3, h4, h5, h6, p, span, a, button, li, th, td, label, strong, b) {
+  font-weight: 400 !important;
+}
+.font-black,
+.font-extrabold,
+.font-bold,
+.font-semibold,
+.font-medium {
+  font-weight: 400 !important;
 }
 
 @layer utilities {
@@ -61,9 +115,10 @@
   50% { opacity: 0; }
 }
 
-/* Code block styling */
-pre code {
-  font-family: var(--font-mono);
+/* Code block styling — JetBrains Mono for all code */
+pre code,
+code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 /* Scrollbar styling for dark mode */

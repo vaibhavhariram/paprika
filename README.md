@@ -85,6 +85,20 @@ npm install
 npm run dev
 ```
 
+## Test Agents
+
+The `examples/test_agents/` directory contains a realistic testbed with deterministic fake tools and a mock LLM — no API keys or network required.
+
+```bash
+# Run from repo root after installing Paprika
+./examples/test_agents/scripts/run_looping.sh            # max_steps policy violation
+./examples/test_agents/scripts/run_wrong_decision.sh      # bad decision trace clarity
+./examples/test_agents/scripts/run_support_workflow.sh happy    # happy-path refund
+./examples/test_agents/scripts/run_support_workflow.sh mismatch # replay-mismatch demo
+```
+
+See [examples/test_agents/README.md](examples/test_agents/README.md) for details.
+
 ## Current Limitations
 
 - Traces are stored locally as JSON files (no hosted storage yet)

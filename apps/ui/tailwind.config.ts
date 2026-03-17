@@ -6,13 +6,14 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
-          "Inter",
+          "Geist-Variable",
+          "Geist",
           "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",
           "sans-serif",
         ],
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
     },
   },
