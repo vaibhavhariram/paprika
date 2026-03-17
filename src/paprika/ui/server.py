@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from paprika.config import DEFAULT_RUN_LIMIT, MAX_RUN_LIMIT
 from paprika.errors import InvalidRunIdError, TraceNotFoundError
 from paprika.ui.transforms import record_to_detail
 
@@ -25,7 +26,7 @@ def build_app(store: LocalTraceStore) -> FastAPI:
     # --- API routes ---
 
     @app.get("/api/runs")
-    def list_runs(limit: int = Query(default=20, ge=1, le=200)) -> JSONResponse:
+    def list_runs(limit: int = Query(default=DEFAULT_RUN_LIMIT, ge=1, le=MAX_RUN_LIMIT)) -> JSONResponse:
         """List recent runs with summary info."""
         summaries = store.list_runs(limit=limit)
         runs = [

@@ -9,6 +9,7 @@ from typing import Annotated
 import typer
 
 from paprika._formatting import format_duration, format_table
+from paprika.config import DEFAULT_RUN_LIMIT, DEFAULT_UI_PORT, DEFAULT_HOST
 from paprika.execution_record import (
     LLMCallStep,
     PolicyViolationStep,
@@ -38,7 +39,7 @@ def _resolve_trace_dir(trace_dir: Path | None) -> Path | None:
 
 @runs_app.command("list")
 def list_runs(
-    limit: int = typer.Option(20, help="Maximum number of runs to display"),  # noqa: B008
+    limit: int = typer.Option(DEFAULT_RUN_LIMIT, help="Maximum number of runs to display"),  # noqa: B008
     trace_dir: TraceDirOption = None,
 ) -> None:
     """List recent agent runs."""
@@ -128,7 +129,7 @@ def _print_step(
 
 @app.command("ui")
 def launch_ui(
-    port: int = typer.Option(8787, help="Port for the UI server"),  # noqa: B008
+    port: int = typer.Option(DEFAULT_UI_PORT, help="Port for the UI server"),  # noqa: B008
     trace_dir: TraceDirOption = None,
     no_open: bool = typer.Option(  # noqa: B008
         False, "--no-open", help="Don't auto-open the browser"
@@ -150,7 +151,7 @@ def launch_ui(
     resolved = _resolve_trace_dir(trace_dir)
     store = LocalTraceStore(base_dir=resolved)
     ui_app = create_app(store)
-    url = f"http://127.0.0.1:{port}"
+    url = f"http://{DEFAULT_HOST}:{port}"
 
     if not no_open:
         import threading
@@ -168,7 +169,7 @@ def launch_ui(
     typer.echo(f"Serving traces from {store.base_dir}")
     typer.echo("Press Ctrl+C to stop.")
     try:
-        uvicorn.run(ui_app, host="127.0.0.1", port=port, log_level="warning")
+        uvicorn.run(ui_app, host=DEFAULT_HOST, port=port, log_level="warning")
     except OSError as exc:
         typer.echo(f"Error: {exc}", err=True)
         typer.echo(f"Port {port} may be in use. Try: paprika ui --port {port + 1}", err=True)

@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from paprika.config import DEFAULT_RUN_LIMIT
 from paprika.errors import InvalidRunIdError, TraceNotFoundError
 from paprika.events import TraceEvent  # noqa: TC001
 from paprika.execution_record import ExecutionRecord
@@ -159,7 +160,7 @@ class LocalTraceStore:
         logger.debug("Saved record %s to %s", record.record_id, path)
         return path
 
-    def list_runs(self, limit: int = 20) -> list[TraceSummary]:
+    def list_runs(self, limit: int = DEFAULT_RUN_LIMIT) -> list[TraceSummary]:
         """List recent traces, sorted by modification time (newest first).
 
         Handles both v0 (legacy Trace) and v1 (ExecutionRecord) files.

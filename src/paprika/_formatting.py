@@ -30,13 +30,6 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
-def truncate(s: str, max_len: int = 80) -> str:
-    """Truncate a string, adding ellipsis if needed."""
-    if len(s) <= max_len:
-        return s
-    return s[: max_len - 3] + "..."
-
-
 def format_duration(ms: float | None) -> str:
     """Format a duration in milliseconds to a human-readable string."""
     if ms is None:
