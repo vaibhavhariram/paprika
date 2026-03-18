@@ -49,7 +49,7 @@ const sections = [
     ],
   },
   {
-    title: "Integration & Usage",
+    title: "Integration",
     items: [
       {
         icon: Puzzle,
@@ -66,25 +66,8 @@ const sections = [
       {
         icon: BookOpen,
         title: "Configuration",
-        desc: "Configure trace storage, policies, and the browser UI.",
+        desc: "Configure trace storage, policies, and environment settings.",
         href: "/docs/configuration",
-      },
-      {
-        icon: BookOpen,
-        title: "UI",
-        desc: "Explore the local browser UI for trace inspection and visualization.",
-        href: "/docs/ui",
-      },
-    ],
-  },
-  {
-    title: "Reference",
-    items: [
-      {
-        icon: BookOpen,
-        title: "How Paprika Fits",
-        desc: "Understand Paprika's place in the stack: vs LangSmith, vs evals, vs monitoring.",
-        href: "/docs/how-paprika-fits",
       },
     ],
   },

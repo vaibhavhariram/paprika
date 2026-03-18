@@ -27,13 +27,6 @@ const docsNav = [
       { title: "Integrations", href: "/docs/integrations" },
       { title: "CLI", href: "/docs/cli" },
       { title: "Configuration", href: "/docs/configuration" },
-      { title: "UI", href: "/docs/ui" },
-    ],
-  },
-  {
-    title: "Reference",
-    items: [
-      { title: "How Paprika Fits", href: "/docs/how-paprika-fits" },
     ],
   },
 ];
@@ -50,21 +43,24 @@ export function DocsSidebar() {
 
   return (
     <nav className="w-full">
-      {docsNav.map((section) => (
-        <div key={section.title} className="mb-8">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground/70 font-medium mb-3">
+      {docsNav.map((section, sectionIndex) => (
+        <div
+          key={section.title}
+          className={cn("mb-6", sectionIndex < docsNav.length - 1 && "pb-6 border-b border-border/30")}
+        >
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground/50 font-semibold mb-2 px-3">
             {section.title}
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {section.items.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
-                    "block px-3 py-2 text-sm rounded-md transition-all duration-200",
+                    "flex items-center px-3 py-1.5 text-sm rounded-md transition-all duration-150 border-l-2",
                     isActive(item.href)
-                      ? "bg-accent/20 text-accent border-l-2 border-accent pl-[10px]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+                      ? "border-accent bg-accent/10 text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
                   )}
                 >
                   {item.title}

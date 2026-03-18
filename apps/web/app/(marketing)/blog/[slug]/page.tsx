@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { blogPosts, getBlogPost } from "@/content/blog";
 import { notFound } from "next/navigation";
+import { MarkdownRenderer } from "@/components/marketing/markdown-renderer";
 
 interface Props {
   params: { slug: string };
@@ -36,7 +37,7 @@ export default function BlogPostPage({ params }: Props) {
       </Link>
 
       <article>
-        <header className="mb-10">
+        <header className="mb-12">
           <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
             <time>{post.date}</time>
             <span>·</span>
@@ -44,72 +45,16 @@ export default function BlogPostPage({ params }: Props) {
             <span>·</span>
             <span>{post.author}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl tracking-tight text-balance leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-balance leading-tight">
             {post.title}
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+          <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-3xl">
             {post.description}
           </p>
         </header>
 
-        <div className="prose prose-neutral dark:prose-invert max-w-none">
-          {post.content.split("\n").map((line, i) => {
-            const trimmed = line.trimStart();
-            if (trimmed.startsWith("## ")) {
-              return (
-                <h2
-                  key={i}
-                  className="text-xl mt-10 mb-4 text-foreground"
-                >
-                  {trimmed.slice(3)}
-                </h2>
-              );
-            }
-            if (trimmed.startsWith("### ")) {
-              return (
-                <h3
-                  key={i}
-                  className="text-lg mt-8 mb-3 text-foreground"
-                >
-                  {trimmed.slice(4)}
-                </h3>
-              );
-            }
-            if (trimmed.startsWith("```")) {
-              return null; // Code blocks are simplified for this template
-            }
-            if (trimmed.startsWith("- ") || trimmed.startsWith("1. ")) {
-              return (
-                <p
-                  key={i}
-                  className="text-muted-foreground leading-relaxed ml-4"
-                >
-                  {trimmed}
-                </p>
-              );
-            }
-            if (trimmed.startsWith("|")) {
-              return (
-                <p
-                  key={i}
-                  className="text-muted-foreground font-mono text-sm leading-relaxed"
-                >
-                  {trimmed}
-                </p>
-              );
-            }
-            if (trimmed.length === 0) {
-              return <div key={i} className="h-3" />;
-            }
-            return (
-              <p
-                key={i}
-                className="text-muted-foreground leading-relaxed mb-3"
-              >
-                {trimmed}
-              </p>
-            );
-          })}
+        <div className="prose-content">
+          <MarkdownRenderer content={post.content} />
         </div>
       </article>
     </div>

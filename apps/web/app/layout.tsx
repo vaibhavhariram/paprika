@@ -4,11 +4,22 @@ import { sans } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Paprika — Execution control infrastructure for AI agents",
+  title: "Paprika",
   description:
     "The execution layer for reliable AI agents. Trace every run, enforce runtime policies, and replay safely. Production-ready agent control.",
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    apple: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+      },
+    ],
   },
 };
 

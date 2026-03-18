@@ -179,7 +179,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         parts.push(
           <code
             key={`inline-code-${parts.length}`}
-            className="px-2 py-1 rounded bg-muted text-muted-foreground font-mono text-sm"
+            className="px-1.5 py-0.5 rounded-md bg-muted/70 text-foreground/80 border border-border/40 font-mono text-[0.85em]"
           >
             {match[3]}
           </code>

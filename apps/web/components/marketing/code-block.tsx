@@ -52,27 +52,33 @@ export function CodeBlock({ code, language = "python", className }: CodeBlockPro
   const highlightedCode = highlightCode(code, language);
 
   return (
-    <div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-border/60 bg-card overflow-hidden", className)}>
       {/* Header with language and copy button */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50">
-        <span className="text-xs text-muted-foreground font-mono">{language}</span>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-muted/30">
+        <span className="text-[11px] text-muted-foreground/60 font-mono tracking-wide">{language}</span>
         <button
           onClick={copyToClipboard}
-          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-all duration-150"
           title={copied ? "Copied!" : "Copy code"}
         >
           {copied ? (
-            <Check className="w-4 h-4" />
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>Copied</span>
+            </>
           ) : (
-            <Copy className="w-4 h-4" />
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy</span>
+            </>
           )}
         </button>
       </div>
 
       {/* Code block */}
-      <pre className="p-5 overflow-x-auto text-sm leading-[1.6]">
+      <pre className="p-6 overflow-x-auto text-sm leading-[1.7]">
         <code
-          className="font-mono text-foreground/90"
+          className="font-mono text-foreground/85"
           dangerouslySetInnerHTML={{ __html: highlightedCode }}
         />
       </pre>

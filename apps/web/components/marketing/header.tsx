@@ -27,8 +27,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <Image src="/logo.svg" alt="" width={28} height={12} className="h-5 w-auto" />
+        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight hover:opacity-80 transition-opacity">
+          <Image src="/logo.svg" alt="Paprika" width={24} height={24} className="h-6 w-6" priority />
           <span className="text-lg">Paprika</span>
         </Link>
 

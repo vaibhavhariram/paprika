@@ -24,7 +24,7 @@ const footerSections = [
       { label: "About", href: "/company" },
       { label: "Book a Demo", href: "https://cal.com/vaibhavhariram/30min" },
       { label: "Join the waitlist", href: "/waitlist" },
-      { label: "LinkedIn", href: "https://linkedin.com/in/vaibhavhariram" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
