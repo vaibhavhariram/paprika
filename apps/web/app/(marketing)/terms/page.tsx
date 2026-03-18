@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Section } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Paprika",
+  title: "Terms",
   description: "Terms of service for Paprika execution control infrastructure.",
 };
 
@@ -66,10 +66,10 @@ export default function TermsPage() {
           <p>
             For questions about these Terms, contact us at{" "}
             <a
-              href="mailto:hello@paprika.ai"
+              href="mailto:hello@usepaprika.co"
               className="text-foreground underline"
             >
-              hello@paprika.ai
+              hello@usepaprika.co
             </a>
             .
           </p>

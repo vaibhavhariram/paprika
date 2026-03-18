@@ -15,9 +15,9 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: Props): Metadata {
   const post = getBlogPost(params.slug);
-  if (!post) return { title: "Not Found — Paprika" };
+  if (!post) return { title: "Not Found" };
   return {
-    title: `${post.title} — Paprika Blog`,
+    title: post.title,
     description: post.description,
   };
 }

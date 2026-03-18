@@ -17,6 +17,11 @@ export interface DocContent {
   path: string;
 }
 
+function inferTitleFromMarkdown(markdown: string): string | null {
+  const match = markdown.match(/^#\s+(.+)\s*$/m);
+  return match?.[1]?.trim() || null;
+}
+
 /**
  * Get a single doc by slug array
  * e.g., ['core-concepts', 'runtime'] -> /docs/core-concepts/runtime.md
@@ -27,9 +32,19 @@ export async function getDoc(slugArray: string[]): Promise<DocContent | null> {
     const fileContents = readFileSync(docPath, 'utf8');
     const { data, content } = matter(fileContents);
 
+    const inferredTitle = inferTitleFromMarkdown(content);
+    const metadata = {
+      ...(data as DocMetadata),
+      title:
+        (data as DocMetadata)?.title ||
+        inferredTitle ||
+        slugArray[slugArray.length - 1]?.replace(/-/g, ' ') ||
+        'Docs',
+    } satisfies DocMetadata;
+
     return {
       slug: slugArray,
-      metadata: data as DocMetadata,
+      metadata,
       content,
       path: docPath,
     };

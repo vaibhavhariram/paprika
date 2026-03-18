@@ -7,7 +7,7 @@ import { Section, SectionHeader } from "@/components/marketing/section";
 const DEMO_URL = "https://cal.com/vaibhavhariram/30min";
 
 export const metadata: Metadata = {
-  title: "Pricing — Paprika",
+  title: "Pricing",
   description: "Execution control for AI agents. Design partner, growth, and enterprise plans.",
 };
 

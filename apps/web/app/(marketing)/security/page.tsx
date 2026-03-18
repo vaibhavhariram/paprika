@@ -3,7 +3,7 @@ import { ShieldCheck, Lock, Eye, Activity, FileJson, AlertTriangle } from "lucid
 import { Section, SectionHeader } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
-  title: "Security — Paprika",
+  title: "Security",
   description:
     "Security posture for Paprika: execution isolation, audit trails, and enterprise trust.",
 };

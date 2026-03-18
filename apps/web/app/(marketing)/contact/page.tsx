@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Section, SectionHeader } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
-  title: "Contact — Paprika",
+  title: "Contact",
   description: "Book a demo or join the design partner program.",
 };
 
@@ -36,10 +36,10 @@ export default function ContactPage() {
         <p>
           Send us an email at{" "}
           <a
-            href="mailto:hello@paprika.ai"
+            href="mailto:hello@usepaprika.co"
             className="text-foreground underline hover:no-underline"
           >
-            hello@paprika.ai
+            hello@usepaprika.co
           </a>{" "}
           with a brief description of your use case. We'll get back within a few
           business days.

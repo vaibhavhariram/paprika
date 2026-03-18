@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Section } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Paprika",
+  title: "Privacy",
   description: "Privacy policy for Paprika execution control infrastructure.",
 };
 
@@ -56,10 +56,10 @@ export default function PrivacyPage() {
             For privacy-related questions or to exercise your rights, please
             contact us at{" "}
             <a
-              href="mailto:hello@paprika.ai"
+              href="mailto:hello@usepaprika.co"
               className="text-foreground underline"
             >
-              hello@paprika.ai
+              hello@usepaprika.co
             </a>
             .
           </p>

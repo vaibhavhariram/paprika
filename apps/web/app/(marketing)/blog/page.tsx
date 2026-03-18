@@ -5,7 +5,7 @@ import { blogPosts } from "@/content/blog";
 import { Section, SectionHeader } from "@/components/marketing/section";
 
 export const metadata: Metadata = {
-  title: "Blog — Paprika",
+  title: "Blog",
   description: "Technical insights on production AI agent execution, runtime control, and operational reliability.",
 };
 

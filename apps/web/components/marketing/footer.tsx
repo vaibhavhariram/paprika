@@ -43,7 +43,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-sm font-semibold mb-3">{section.title}</h3>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-3">
+                {section.title}
+              </h3>
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.label}>
@@ -72,24 +74,14 @@ export function Footer() {
         </div>
         <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Paprika Technologies, Inc. All rights reserved.
+            &copy; 2026 Paprika, Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="https://linkedin.com/in/vaibhavhariram"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:hello@usepaprika.co"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              LinkedIn
-            </a>
-            <a
-              href="https://twitter.com/papaborhq"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Twitter
+              hello@usepaprika.co
             </a>
           </div>
         </div>

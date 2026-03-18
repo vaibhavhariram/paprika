@@ -18,7 +18,7 @@ import { CodeBlock } from "@/components/marketing/code-block";
 const DEMO_URL = "https://cal.com/vaibhavhariram/30min";
 
 export const metadata: Metadata = {
-  title: "Product — Paprika",
+  title: "Product",
   description:
     "Execution control infrastructure for AI agents: traceability, policy enforcement, safe replay, and operational workflows.",
 };

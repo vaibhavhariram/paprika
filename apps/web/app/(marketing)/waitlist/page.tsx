@@ -8,7 +8,7 @@ import { WaitlistForm } from "@/components/marketing/waitlist-form";
 const DEMO_URL = "https://cal.com/vaibhavhariram/30min";
 
 export const metadata: Metadata = {
-  title: "Waitlist — Paprika",
+  title: "Waitlist",
   description: "Join the waitlist for Paprika execution control infrastructure.",
 };
 

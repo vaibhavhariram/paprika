@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Zap, Puzzle, Layers } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Documentation — Paprika",
+  title: "Docs",
   description: "Comprehensive documentation for Paprika, the deterministic debugging runtime for AI agents.",
 };
 

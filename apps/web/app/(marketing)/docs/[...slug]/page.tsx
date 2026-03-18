@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: DocsPageProps) {
   }
 
   return {
-    title: `${doc.metadata.title} | Paprika Docs`,
+    title: doc.metadata.title,
     description: doc.metadata.description || "Paprika documentation",
   };
 }

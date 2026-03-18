@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Paprika mark optimized for favicon -->
-  <path d="M12 48C12 48 20 44 32 34C44 24 48 16 58 13C58 13 58 24 54 32C50 40 42 48 30 52C18 56 14 54 12 52L12 48Z" fill="#EF4444"/>
-  <path d="M58 13C58 13 59 17 60 21C56 19 52 17 48 17C44 17 40 20 36 23C42 19 50 15 58 13Z" fill="#1a1a1a" fill-opacity="0.2"/>
+  <g transform="translate(-3 0)">
+    <path d="M12 48C12 48 20 44 32 34C44 24 48 16 58 13C58 13 58 24 54 32C50 40 42 48 30 52C18 56 14 54 12 52L12 48Z" fill="#EF4444"/>
+    <path d="M58 13C58 13 59 17 60 21C56 19 52 17 48 17C44 17 40 20 36 23C42 19 50 15 58 13Z" fill="#1a1a1a" fill-opacity="0.2"/>
+  </g>
 </svg>
