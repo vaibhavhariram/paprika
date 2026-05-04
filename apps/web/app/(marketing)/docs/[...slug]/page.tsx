@@ -46,18 +46,6 @@ export default async function DocsPage({ params }: DocsPageProps) {
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {/* Page header */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-semibold text-foreground mb-2">
-          {doc.metadata.title}
-        </h1>
-        {doc.metadata.description && (
-          <p className="text-lg text-muted-foreground">
-            {doc.metadata.description}
-          </p>
-        )}
-      </div>
-
       {/* Content */}
       <article className="prose prose-invert max-w-none mb-16">
         <MarkdownRenderer content={doc.content} />
