@@ -13,6 +13,7 @@ const DEMO_URL = "https://cal.com/vaibhavhariram/30min";
 const navLinks = [
   { href: "/product", label: "Product" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/demo", label: "Demo" },
   { href: "/docs", label: "Docs" },
   { href: "/security", label: "Security" },
   { href: "/company", label: "Company" },
