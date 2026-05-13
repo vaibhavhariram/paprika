@@ -3,12 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Github, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const DEMO_URL = "https://cal.com/vaibhavhariram/30min";
+const GITHUB_URL = "https://github.com/vaibhavhariram/paprika";
 
 const navLinks = [
   { href: "/product", label: "Product" },
@@ -61,6 +62,16 @@ export function Header() {
               <Moon className="h-4 w-4" />
             )}
           </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View Paprika on GitHub"
+            >
+              <Github className="h-4 w-4" />
+            </a>
+          </Button>
           <Button size="sm" asChild>
             <a href={DEMO_URL} target="_blank" rel="noopener noreferrer">
               Book a demo
@@ -111,6 +122,16 @@ export function Header() {
               ) : (
                 <Moon className="h-4 w-4" />
               )}
+            </Button>
+            <Button variant="ghost" size="icon" asChild>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View Paprika on GitHub"
+              >
+                <Github className="h-4 w-4" />
+              </a>
             </Button>
             <Button size="sm" asChild>
               <a href={DEMO_URL} target="_blank" rel="noopener noreferrer">
